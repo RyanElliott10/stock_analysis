@@ -1,4 +1,4 @@
-# stock_analysis
+# Stock Analysis
 General purpose stock analysis project.
 
 ## Coding standard
