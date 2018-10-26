@@ -11,4 +11,4 @@ General purpose stock analysis project.
 - var_name_ for class members
 
 ## Datasets
-All data I use was pulled from [Kaggle:](https://www.kaggle.com/qks1lver/nasdaq-and-nyse-stocks-histories)
+All data I use was pulled from [Kaggle](https://www.kaggle.com/qks1lver/nasdaq-and-nyse-stocks-histories)
