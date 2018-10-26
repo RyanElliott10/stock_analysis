@@ -1,7 +1,7 @@
 # Stock Analysis
 General purpose stock analysis project.
 
-## Coding standard
+## Coding Standard
 - 2 spaces
 - files are to be named_like_this.cc (NOT .cpp)
 - StrongCamelCase for classes, structs, enums, etc. (all types)
