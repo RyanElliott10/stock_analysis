@@ -22,6 +22,7 @@ void Stock::insert_data_point(DataPoint *data)
   data_vector_.push_back(data);
 }
 
+// Getters
 std::string Stock::get_ticker()
 {
   return ticker_;

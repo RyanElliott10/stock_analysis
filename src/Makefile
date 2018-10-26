@@ -1,5 +1,5 @@
 CC = clang++
-FLAGS = -pedantic -Wall -std=c++11 -v
+FLAGS = -pedantic -Wall -v -Werror -std=c++11
 OBJS = analysis.o stock.o data_point.o csv.o
 MAIN = analysis
 

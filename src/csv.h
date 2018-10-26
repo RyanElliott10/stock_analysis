@@ -9,6 +9,7 @@ class CSV
 {
 public:
   CSV();
+  CSV(std::string path);
   ~CSV();
   bool enter_data(std::string dir);
 

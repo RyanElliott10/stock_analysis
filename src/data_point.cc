@@ -22,6 +22,7 @@ DataPoint::~DataPoint()
   // No *allocs or pointers
 }
 
+// Getters
 std::string DataPoint::get_date()
 {
   return date_;

@@ -9,8 +9,9 @@
 #include "stock.h"
 #include "data_point.h"
 
-CSV::CSV()
+CSV::CSV(std::string path)
 {
+   enter_data(path);
 }
 
 CSV::~CSV()
@@ -72,6 +73,8 @@ void CSV::_get_csvs(DIR *dir)
  */
 void CSV::_parse_data()
 {
+   int count = 0;
+   std::string prev_ticker;
    std::cout << "Parsing data from " << csv_vector_.size()
              << " CSV files" << std::endl;
 
@@ -84,50 +87,57 @@ void CSV::_parse_data()
 
       // Creates Stock object to do operations on. The if is just for testing
       // purposes, remove once fully implemented
-      if (!std::string(*curr_file).compare("AAPL.csv"))
+      // if (!std::string(*curr_file).compare("AAPL.csv"))
+      // {
+      std::string ticker(*curr_file);
+      prev_ticker = "";
+      ticker = ticker.substr(0, ticker.find(".csv"));
+      Stock stock(ticker);
+
+      while (getline(my_file, data_line))
       {
-         std::string ticker(*curr_file);
-         ticker = ticker.substr(0, ticker.find(".csv"));
-         Stock stock(ticker);
+         std::string date, volume, open, close, high, low, adj_close;
 
-         while (getline(my_file, data_line))
+         // Get data from the current line CSV file
+         getline(my_file, date, ',');
+         getline(my_file, volume, ',');
+         getline(my_file, open, ',');
+         getline(my_file, close, ',');
+         getline(my_file, high, ',');
+         getline(my_file, low, ',');
+         getline(my_file, adj_close, ',');
+
+         // Cuts data off to 2 decimal points
+         open = open.substr(0, open.find('.') + 3);
+         high = high.substr(0, high.find('.') + 3);
+         low = low.substr(0, low.find('.') + 3);
+         adj_close = adj_close.substr(0, adj_close.find('.') + 3);
+
+         try
          {
-            std::string date, volume, open, close, high, low, adj_close;
-
-            // Get data from the current line CSV file
-            getline(my_file, date, ',');
-            getline(my_file, volume, ',');
-            getline(my_file, open, ',');
-            getline(my_file, close, ',');
-            getline(my_file, high, ',');
-            getline(my_file, low, ',');
-            getline(my_file, adj_close, ',');
-
-            // Cuts data off to 2 decimal points
-            open = open.substr(0, open.find('.') + 3);
-            high = high.substr(0, high.find('.') + 3);
-            low = low.substr(0, low.find('.') + 3);
-            adj_close = adj_close.substr(0, adj_close.find('.') + 3);
-
-            try
-            {
-               DataPoint *data = new DataPoint(date, std::stol(volume),
-                                               std::stof(open),
-                                               std::stof(adj_close),
-                                               std::stof(high), std::stof(low));
-               stock.insert_data_point(data);
-            }
-            catch (std::invalid_argument &e)
+            DataPoint *data = new DataPoint(date, std::stol(volume),
+                                            std::stof(open),
+                                            std::stof(adj_close),
+                                            std::stof(high), std::stof(low));
+            stock.insert_data_point(data);
+         }
+         catch (std::invalid_argument &e)
+         {
+            if (prev_ticker.compare(ticker) == 0)
             {
                std::cerr << stock.get_ticker() << ": Unable to create DataPoint"
-                         << " object, likely due to invalid std::stof arguments"
-                         << ". This can likely be ignored as most of the CSV"
-                         << " files have issues with the last line of data."
                          << std::endl;
             }
+            prev_ticker = ticker;
          }
       }
+      // }
 
       my_file.close();
+      std::cout << "\r" << ++count << " / " << csv_vector_.size();
+
+      std::cout.flush();
    }
+
+   std::cout << std::endl;
 }
