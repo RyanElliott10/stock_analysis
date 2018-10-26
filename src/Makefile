@@ -1,19 +1,19 @@
 CC = clang++
-FLAGS = -pedantic -Wall
+FLAGS = -pedantic -Wall -std=c++11 -v
 OBJS = analysis.o stock.o data_point.o csv.o
 MAIN = analysis
 
 analysis : $(OBJS)
 	$(CC) $(OBJS) -o analysis
 
-stock : stock.cpp stock.h data_point.h
-	$(CC) $(CFLAGS) -c stock.cpp
+stock : stock.cc stock.h data_point.h
+	$(CC) $(CFLAGS) -c stock.cc
 
-DataPoint : data_point.cpp data_point.h
-	$(CC) $(CFLAGS) -c data_point.cpp
+DataPoint : data_point.cc data_point.h
+	$(CC) $(CFLAGS) -c data_point.cc
 
-CSV : csv.cpp csv.h
-	$(CC) $(CFLAGS) -c csv.cpp
+CSV : csv.cc csv.h
+	$(CC) $(CFLAGS) -c csv.cc
 	
 clean :
 	rm *.o $(MAIN)

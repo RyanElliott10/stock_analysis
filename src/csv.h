@@ -14,6 +14,7 @@ public:
 
 private:
   void _get_csvs(DIR *dir);
+  void _parse_data();
   std::vector<std::string> csv_vector_;
 };
 

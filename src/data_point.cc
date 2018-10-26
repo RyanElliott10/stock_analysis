@@ -6,9 +6,10 @@
 
 DataPoint::DataPoint() {}
 
-DataPoint::DataPoint(int volume, float open, float adj_close,
+DataPoint::DataPoint(std::string date, long volume, float open, float adj_close,
                      float low, float high)
 {
+  date_ = date;
   volume_ = volume;
   open_ = open;
   adj_close_ = adj_close;
@@ -21,7 +22,12 @@ DataPoint::~DataPoint()
   // No *allocs or pointers
 }
 
-int DataPoint::get_volume()
+std::string DataPoint::get_date()
+{
+  return date_;
+}
+
+long DataPoint::get_volume()
 {
   return volume_;
 }

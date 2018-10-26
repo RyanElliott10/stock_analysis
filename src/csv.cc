@@ -3,8 +3,11 @@
 #include <iostream>
 #include <unistd.h>
 #include <dirent.h>
+#include <fstream>
 
 #include "csv.h"
+#include "stock.h"
+#include "data_point.h"
 
 CSV::CSV()
 {
@@ -40,6 +43,8 @@ bool CSV::enter_data(std::string target_dir)
       return false;
    }
 
+   _parse_data();
+
    return true;
 }
 
@@ -51,21 +56,78 @@ void CSV::_get_csvs(DIR *dir)
 {
    struct dirent *de;
 
-   if ((dir = opendir(".")) != NULL)
+   while ((de = readdir(dir)) != NULL)
    {
-      while ((de = readdir(dir)) != NULL)
+      std::string de_name(de->d_name);
+      if (de_name.find(".csv") != std::string::npos)
       {
-         std::string de_name(de->d_name);
-         if (de_name.find(".csv") != std::string::npos)
-         {
-            csv_vector_.push_back(de_name);
-            std::cout << csv_vector_.at(csv_vector_.size() - 1) << std::endl;
-         }
+         csv_vector_.push_back(de_name);
       }
    }
-   else
+}
+
+/**
+ * Iterates through the csv_vector_ data, opens each file and creates DataPoint
+ * objects for each line.
+ */
+void CSV::_parse_data()
+{
+   std::cout << "Parsing data from " << csv_vector_.size()
+             << " CSV files" << std::endl;
+
+   for (std::vector<std::string>::iterator curr_file = csv_vector_.begin();
+        curr_file != csv_vector_.end(); ++curr_file)
    {
-      std::cerr << "Unable to open directory (CSV.cpp)" << std::endl;
-      exit(1);
+      std::string data_line;
+      std::fstream my_file;
+      my_file.open(*curr_file);
+
+      // Creates Stock object to do operations on. The if is just for testing
+      // purposes, remove once fully implemented
+      if (!std::string(*curr_file).compare("AAPL.csv"))
+      {
+         std::string ticker(*curr_file);
+         ticker = ticker.substr(0, ticker.find(".csv"));
+         Stock stock(ticker);
+
+         while (getline(my_file, data_line))
+         {
+            std::string date, volume, open, close, high, low, adj_close;
+
+            // Get data from the current line CSV file
+            getline(my_file, date, ',');
+            getline(my_file, volume, ',');
+            getline(my_file, open, ',');
+            getline(my_file, close, ',');
+            getline(my_file, high, ',');
+            getline(my_file, low, ',');
+            getline(my_file, adj_close, ',');
+
+            // Cuts data off to 2 decimal points
+            open = open.substr(0, open.find('.') + 3);
+            high = high.substr(0, high.find('.') + 3);
+            low = low.substr(0, low.find('.') + 3);
+            adj_close = adj_close.substr(0, adj_close.find('.') + 3);
+
+            try
+            {
+               DataPoint *data = new DataPoint(date, std::stol(volume),
+                                               std::stof(open),
+                                               std::stof(adj_close),
+                                               std::stof(high), std::stof(low));
+               stock.insert_data_point(data);
+            }
+            catch (std::invalid_argument &e)
+            {
+               std::cerr << stock.get_ticker() << ": Unable to create DataPoint"
+                         << " object, likely due to invalid std::stof arguments"
+                         << ". This can likely be ignored as most of the CSV"
+                         << " files have issues with the last line of data."
+                         << std::endl;
+            }
+         }
+      }
+
+      my_file.close();
    }
 }

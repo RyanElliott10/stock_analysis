@@ -7,16 +7,19 @@ class DataPoint
 {
 public:
   DataPoint();
-  DataPoint(int volume, float open, float adj_close, float low, float high);
+  DataPoint(std::string date, long volume, float open,
+            float adj_close, float low, float high);
   ~DataPoint();
-  int get_volume();
+  std::string get_date();
+  long get_volume();
   float get_open();
   float get_adj_close();
   float get_low();
   float get_high();
 
 private:
-  int volume_;
+  std::string date_;
+  long volume_;
   float open_, adj_close_, low_, high_;
 };
 
