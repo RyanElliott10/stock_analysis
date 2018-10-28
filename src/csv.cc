@@ -113,10 +113,14 @@ void CSV::_parse_data()
 
          // Cuts csv_filenames_ off to 2 decimal points
          // std::cout << "Here: " << line_data.size() << std::endl;
-         line_data.at(2) = line_data.at(2).substr(0, line_data.at(2).find('.') + 3);
-         line_data.at(3) = line_data.at(3).substr(0, line_data.at(3).find('.') + 3);
-         line_data.at(4) = line_data.at(4).substr(0, line_data.at(4).find('.') + 3);
-         line_data.at(5) = line_data.at(5).substr(0, line_data.at(5).find('.') + 3);
+         line_data.at(2) = line_data.at(2).substr(0,
+                                                line_data.at(2).find('.') + 3);
+         line_data.at(3) = line_data.at(3).substr(0,
+                                                line_data.at(3).find('.') + 3);
+         line_data.at(4) = line_data.at(4).substr(0,
+                                                line_data.at(4).find('.') + 3);
+         line_data.at(5) = line_data.at(5).substr(0,
+                                                line_data.at(5).find('.') + 3);
 
          // Create new DataPoint object and add to the Stock's historical data
          try
@@ -146,8 +150,7 @@ void CSV::_parse_data()
       if (stock->get_data().size() > 0)
       {
          stocks_.push_back(stock);
-      }
-      else
+      } else
       {
          free(stock);
       }
