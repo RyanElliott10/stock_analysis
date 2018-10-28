@@ -5,18 +5,23 @@
 #include <vector>
 #include <dirent.h>
 
+#include "stock.h"
+
 class CSV
 {
 public:
-  CSV();
   CSV(std::string path);
   ~CSV();
   bool enter_data(std::string dir);
+  std::vector<Stock *> get_stocks();
 
 private:
   void _get_csvs(DIR *dir);
   void _parse_data();
-  std::vector<std::string> csv_vector_;
+  std::vector<std::string> _parseline(std::string data_line);
+
+  std::vector<std::string> csv_filenames_;
+  std::vector<Stock *> stocks_;
 };
 
 #endif

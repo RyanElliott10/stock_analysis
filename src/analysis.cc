@@ -8,29 +8,30 @@
 int main(int argc, char *argv[])
 {
   std::string input;
-  Stock test("AAPL");
-
-  for (long i = 0; i < 1; i++)
-  {
-    DataPoint *data = new DataPoint("10/11/2018", i, 100, 105, 98, 105);
-    test.insert_data_point(data);
-  }
-  for (int i = 0; i < 1; i++)
-  {
-    DataPoint *temp = test.get_data().at(i);
-    // std::cout << temp->getVolume() << " " << temp->getOpen() << std::endl;
-  }
+  CSV *csv;
 
   // Prompt user if they want to enter new data into the database
   std::cout << "Enter new data into database? (y/n) ";
   std::cin >> input;
   if (input.find('y') == 0)
   {
-    CSV csv(std::string("./data/full_history"));
+    csv = new CSV(std::string("./data/full_history/"));
   }
-  // else
-  // {
-  //   CSV csv;
-  // }
+
+  if (csv)
+  {
+    for (int i = 0; i < csv->get_stocks().size(); i++)
+    {
+      // std::cout << i << " " << std::endl;
+      Stock *curr_stock = csv->get_stocks().at(i);
+      // std::cout << curr_stock->get_ticker() << " Size: "
+      //           << curr_stock->get_data().size() << " "
+                // << curr_stock->get_data().at(0)->get_adj_close() << std::endl;
+
+      std::cout << curr_stock->get_ticker() << " Size: "
+                << curr_stock->get_data().size() << " " << std::endl;
+    }
+  }
+
   return 0;
 }

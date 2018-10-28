@@ -20,7 +20,7 @@ public:
 private:
   std::string ticker_;
   // vector of pointers to DataPoint objects
-  std::vector<DataPoint *> data_vector_;
+  std::vector<DataPoint *> historical_data_;
 };
 
 #endif

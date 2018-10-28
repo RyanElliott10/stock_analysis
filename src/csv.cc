@@ -4,6 +4,12 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <fstream>
+#include <typeinfo>
+#include <sstream>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 #include "csv.h"
 #include "stock.h"
@@ -21,7 +27,7 @@ CSV::~CSV()
 
 /**
  * Accepts a string containing the target directory, changes the cwd to the
- * correct directory, dumps all CSV files into the csv_vector_ member, and
+ * correct directory, dumps all CSV files into the csv_filenames_ member, and
  * enters the data into a SQLite3 database.
  * 
  * Returns boolean of success
@@ -45,13 +51,17 @@ bool CSV::enter_data(std::string target_dir)
    }
 
    _parse_data();
-
    return true;
+}
+
+std::vector<Stock *> CSV::get_stocks()
+{
+   return stocks_;
 }
 
 /**
  * Accepts a directory, iterates through it, and assigns all CSV files to
- * the csv_vector_ vector to be used later.
+ * the csv_filenames_ vector to be used later.
  */
 void CSV::_get_csvs(DIR *dir)
 {
@@ -62,82 +72,104 @@ void CSV::_get_csvs(DIR *dir)
       std::string de_name(de->d_name);
       if (de_name.find(".csv") != std::string::npos)
       {
-         csv_vector_.push_back(de_name);
+         csv_filenames_.push_back(de_name);
       }
    }
 }
 
 /**
- * Iterates through the csv_vector_ data, opens each file and creates DataPoint
+ * Iterates through the csv_filenames_ data, opens each file and creates DataPoint
  * objects for each line.
  */
 void CSV::_parse_data()
 {
-   int count = 0;
-   std::string prev_ticker;
-   std::cout << "Parsing data from " << csv_vector_.size()
-             << " CSV files" << std::endl;
+   std::cout << "Parsing data from " << csv_filenames_.size() << " CSV files"
+             << std::endl;
 
-   for (std::vector<std::string>::iterator curr_file = csv_vector_.begin();
-        curr_file != csv_vector_.end(); ++curr_file)
+   for (int i = 0; i < csv_filenames_.size(); i++)
    {
+      const std::string input_file(csv_filenames_.at(i));
+      std::ifstream input_stream(input_file);
       std::string data_line;
-      std::fstream my_file;
-      my_file.open(*curr_file);
 
       // Creates Stock object to do operations on. The if is just for testing
       // purposes, remove once fully implemented
-      // if (!std::string(*curr_file).compare("AAPL.csv"))
-      // {
-      std::string ticker(*curr_file);
-      prev_ticker = "";
+      std::string ticker(input_file);
+      std::string prev_ticker = "";
       ticker = ticker.substr(0, ticker.find(".csv"));
-      Stock stock(ticker);
+      Stock *stock = new Stock(ticker);
 
-      while (getline(my_file, data_line))
+      // Iterate through each line in the file
+      while (getline(input_stream, data_line))
       {
-         std::string date, volume, open, close, high, low, adj_close;
+         // Gets vector of data in the current line
+         std::vector<std::string> line_data = _parseline(data_line);
 
-         // Get data from the current line CSV file
-         getline(my_file, date, ',');
-         getline(my_file, volume, ',');
-         getline(my_file, open, ',');
-         getline(my_file, close, ',');
-         getline(my_file, high, ',');
-         getline(my_file, low, ',');
-         getline(my_file, adj_close, ',');
+         // Ensures it got all the data from the line
+         if (line_data.size() != 7)
+         {
+            continue;
+         }
 
-         // Cuts data off to 2 decimal points
-         open = open.substr(0, open.find('.') + 3);
-         high = high.substr(0, high.find('.') + 3);
-         low = low.substr(0, low.find('.') + 3);
-         adj_close = adj_close.substr(0, adj_close.find('.') + 3);
+         // Cuts csv_filenames_ off to 2 decimal points
+         // std::cout << "Here: " << line_data.size() << std::endl;
+         line_data.at(2) = line_data.at(2).substr(0, line_data.at(2).find('.') + 3);
+         line_data.at(3) = line_data.at(3).substr(0, line_data.at(3).find('.') + 3);
+         line_data.at(4) = line_data.at(4).substr(0, line_data.at(4).find('.') + 3);
+         line_data.at(5) = line_data.at(5).substr(0, line_data.at(5).find('.') + 3);
 
+         // Create new DataPoint object and add to the Stock's historical data
          try
          {
-            DataPoint *data = new DataPoint(date, std::stol(volume),
-                                            std::stof(open),
-                                            std::stof(adj_close),
-                                            std::stof(high), std::stof(low));
-            stock.insert_data_point(data);
+            DataPoint *dp = new DataPoint(line_data.at(0),
+                                          std::stol(line_data.at(1)),
+                                          std::stof(line_data.at(2)),
+                                          std::stof(line_data.at(5)),
+                                          std::stof(line_data.at(3)),
+                                          std::stof(line_data.at(4)));
+            stock->insert_data_point(dp);
          }
-         catch (std::invalid_argument &e)
+         catch (std::invalid_argument &ia)
          {
             if (prev_ticker.compare(ticker) == 0)
             {
-               std::cerr << stock.get_ticker() << ": Unable to create DataPoint"
+               std::cerr << stock->get_ticker() << ": Unable to create DataPoint"
                          << std::endl;
             }
             prev_ticker = ticker;
+            continue;
          }
       }
-      // }
 
-      my_file.close();
-      std::cout << "\r" << ++count << " / " << csv_vector_.size();
+      // Add the stock (with all the data associated with it) to stocks_ vector
+      // if the Stock has DataPoints associated with it
+      if (stock->get_data().size() > 0)
+      {
+         stocks_.push_back(stock);
+      }
+      else
+      {
+         free(stock);
+      }
 
+      // Display counter
+      std::cout << "\r" << i + 1 << " / " << csv_filenames_.size();
       std::cout.flush();
    }
 
    std::cout << std::endl;
+}
+
+std::vector<std::string> CSV::_parseline(std::string data_line)
+{
+   std::string token;
+   std::vector<std::string> data;
+   std::istringstream string_stream(data_line);
+
+   while (getline(string_stream, token, ','))
+   {
+      data.push_back(token);
+   }
+
+   return data;
 }

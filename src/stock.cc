@@ -19,7 +19,7 @@ Stock::~Stock()
 
 void Stock::insert_data_point(DataPoint *data)
 {
-  data_vector_.push_back(data);
+  historical_data_.push_back(data);
 }
 
 // Getters
@@ -30,5 +30,5 @@ std::string Stock::get_ticker()
 
 std::vector<DataPoint *> Stock::get_data()
 {
-  return data_vector_;
+  return historical_data_;
 }
