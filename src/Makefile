@@ -1,10 +1,11 @@
 CC = clang++
-FLAGS = -pedantic -Wall -v -Werror -std=c++11
+CFLAGS = -pedantic -Wall -v -Werror -std=c++11
+BFLAGS = -lsqlite3
 OBJS = analysis.o stock.o data_point.o csv.o
 MAIN = analysis
 
 analysis : $(OBJS)
-	$(CC) $(OBJS) -o analysis
+	$(CC) $(OBJS) $(BFLAGS) -o analysis
 
 stock : stock.cc stock.h data_point.h
 	$(CC) $(CFLAGS) -c stock.cc

@@ -1,6 +1,6 @@
 #include <string>
-#include <iostream>
 #include <vector>
+#include <iostream>
 
 #include "data_point.h"
 

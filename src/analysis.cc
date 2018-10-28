@@ -1,9 +1,9 @@
-#include <iostream>
 #include <string>
+#include <iostream>
 
+#include "csv.h"
 #include "stock.h"
 #include "data_point.h"
-#include "csv.h"
 
 int main(int argc, char *argv[])
 {
@@ -15,22 +15,8 @@ int main(int argc, char *argv[])
   std::cin >> input;
   if (input.find('y') == 0)
   {
-    csv = new CSV(std::string("./data/full_history/"));
-  }
-
-  if (csv)
-  {
-    for (int i = 0; i < csv->get_stocks().size(); i++)
-    {
-      // std::cout << i << " " << std::endl;
-      Stock *curr_stock = csv->get_stocks().at(i);
-      // std::cout << curr_stock->get_ticker() << " Size: "
-      //           << curr_stock->get_data().size() << " "
-                // << curr_stock->get_data().at(0)->get_adj_close() << std::endl;
-
-      std::cout << curr_stock->get_ticker() << " Size: "
-                << curr_stock->get_data().size() << " " << std::endl;
-    }
+    csv = new CSV(std::string("./data/test_history/"));
+    csv->update_db();
   }
 
   return 0;

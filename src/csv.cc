@@ -1,15 +1,12 @@
 #include <string>
 #include <vector>
+#include <fstream>
+#include <sstream>
 #include <iostream>
 #include <unistd.h>
 #include <dirent.h>
-#include <fstream>
 #include <typeinfo>
-#include <sstream>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <string>
+#include <sqlite3.h>
 
 #include "csv.h"
 #include "stock.h"
@@ -22,7 +19,10 @@ CSV::CSV(std::string path)
 
 CSV::~CSV()
 {
-   // No *allocs or pointers
+   for (int i = 0; i < stocks_.size(); i++)
+   {
+      free(stocks_.at(i));
+   }
 }
 
 /**
@@ -47,11 +47,82 @@ bool CSV::enter_data(std::string target_dir)
    else
    {
       std::cerr << "Unable to open directory" << std::endl;
+      chdir("../");
       return false;
    }
 
    _parse_data();
+   chdir("../");
    return true;
+}
+
+bool CSV::update_db()
+{
+   sqlite3 *db;
+   char *db_error_msg;
+   int status;
+   std::string sql;
+
+   /**
+    * This DB will have n tables, where n is equal to the amount of tickers.
+    * Essentially, each ticker has its own database with all of its historical
+    * data.
+    */
+
+   // Open database
+   sql = "HistoricalData.db";
+   status = sqlite3_open(sql.c_str(), &db);
+   if (status != SQLITE_OK)
+   {
+      std::cerr << "Unable to open HistoricalData.db" << std::endl;
+      return false;
+   }
+
+   // Create table
+   sql = "CREATE TABLE IF NOT EXISTS testTicker(ticker TEXT, date TEXT, volume INTEGER, "
+         "open REAL, adj_close REAL, low REAL, high REAL, UNIQUE(date))";
+   status = sqlite3_exec(db, sql.c_str(), _callback, 0, &db_error_msg);
+
+   if (status != SQLITE_OK)
+   {
+      std::cerr << "Unable to create/hook onto table" << std::endl;
+      sqlite3_close(db);
+      return false;
+   }
+
+   sql = "INSERT INTO testTicker VALUES ('AAPL', '10', NULL, NULL, NULL, NULL, NULL)";
+   status = sqlite3_exec(db, sql.c_str(), _callback, 0, &db_error_msg);
+   if (status != SQLITE_OK)
+   {
+      // TODO: Catch unique error. Should continue on with data insertion,
+      // I think. You need to workout the logistics here
+      if (std::string(db_error_msg).find("UNIQUE") == 0)
+      {
+         std::cerr << "Attempted to enter duplicate data, continuing anyway"
+                   << std::endl;
+      }
+      else
+      {
+         std::cerr << "Unable to insert into table"
+                   << std::endl;
+         sqlite3_close(db);
+         return false;
+      }
+   }
+
+   sqlite3_close(db);
+
+   return true;
+}
+
+int CSV::_callback(void *NotUsed, int argc, char **argv, char **azColName)
+{
+   for (int i = 0; i < argc; i++)
+   {
+      printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+   }
+   printf("\n");
+   return 0;
 }
 
 std::vector<Stock *> CSV::get_stocks()
@@ -78,8 +149,8 @@ void CSV::_get_csvs(DIR *dir)
 }
 
 /**
- * Iterates through the csv_filenames_ data, opens each file and creates DataPoint
- * objects for each line.
+ * Iterates through the csv_filenames_ data, opens each file and creates
+ * DataPoint objects for each line.
  */
 void CSV::_parse_data()
 {
@@ -113,14 +184,10 @@ void CSV::_parse_data()
 
          // Cuts csv_filenames_ off to 2 decimal points
          // std::cout << "Here: " << line_data.size() << std::endl;
-         line_data.at(2) = line_data.at(2).substr(0,
-                                                line_data.at(2).find('.') + 3);
-         line_data.at(3) = line_data.at(3).substr(0,
-                                                line_data.at(3).find('.') + 3);
-         line_data.at(4) = line_data.at(4).substr(0,
-                                                line_data.at(4).find('.') + 3);
-         line_data.at(5) = line_data.at(5).substr(0,
-                                                line_data.at(5).find('.') + 3);
+         line_data.at(2) = line_data.at(2).substr(0, line_data.at(2).find('.') + 3);
+         line_data.at(3) = line_data.at(3).substr(0, line_data.at(3).find('.') + 3);
+         line_data.at(4) = line_data.at(4).substr(0, line_data.at(4).find('.') + 3);
+         line_data.at(5) = line_data.at(5).substr(0, line_data.at(5).find('.') + 3);
 
          // Create new DataPoint object and add to the Stock's historical data
          try
@@ -137,8 +204,8 @@ void CSV::_parse_data()
          {
             if (prev_ticker.compare(ticker) == 0)
             {
-               std::cerr << stock->get_ticker() << ": Unable to create DataPoint"
-                         << std::endl;
+               std::cerr << stock->get_ticker()
+                         << ": Unable to create DataPoint" << std::endl;
             }
             prev_ticker = ticker;
             continue;
@@ -150,7 +217,8 @@ void CSV::_parse_data()
       if (stock->get_data().size() > 0)
       {
          stocks_.push_back(stock);
-      } else
+      }
+      else
       {
          free(stock);
       }

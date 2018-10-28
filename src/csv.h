@@ -13,12 +13,14 @@ public:
   CSV(std::string path);
   ~CSV();
   bool enter_data(std::string dir);
+  bool update_db();
   std::vector<Stock *> get_stocks();
 
 private:
   void _get_csvs(DIR *dir);
   void _parse_data();
   std::vector<std::string> _parseline(std::string data_line);
+  static int _callback(void *NotUsed, int argc, char **argv, char **azColName);
 
   std::vector<std::string> csv_filenames_;
   std::vector<Stock *> stocks_;

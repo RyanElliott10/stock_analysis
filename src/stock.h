@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
-#include "data_point.h"
 #include "stock.h"
+#include "data_point.h"
 
 class Stock
 {
