@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <dirent.h>
+#include <sqlite3.h>
 
 #include "stock.h"
 
@@ -21,6 +22,9 @@ private:
   void _parse_data();
   std::vector<std::string> _parseline(std::string data_line);
   static int _callback(void *NotUsed, int argc, char **argv, char **azColName);
+  bool _execute_sql(sqlite3 *db, const char *str,
+                    int (*callback)(void *, int, char **, char **),
+                    void *cb_arg, char **db_error_msg);
 
   std::vector<std::string> csv_filenames_;
   std::vector<Stock *> stocks_;
