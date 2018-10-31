@@ -4,4 +4,4 @@
 .vscode/
 stock_analysis/.DS_Store
 stock_analysis/data/
-../stock_analysis.xcodeproj/*
+/stock_analysis.xcodeproj/*
