@@ -47,7 +47,7 @@ std::vector<Stock *> CSV::get_stocks()
  */
 bool CSV::enter_data(std::string target_dir)
 {
-    // change cwd to dir with all the .csv files
+//    Change cwd to dir with all the .csv files
     char path[FILENAME_MAX];
     DIR *dir;
     
@@ -76,11 +76,11 @@ bool CSV::update_db()
     int status;
     std::string sql;
     
-    // This DB will have n tables, where n is equal to the amount of tickers.
-    // Essentially, each ticker has its own database with all of its historical
-    // data.
-    
-    // Open database
+//     This DB will have n tables, where n is equal to the amount of tickers.
+//     Essentially, each ticker has its own database with all of its historical
+//     data.
+//
+//     Open database
     sql = "HistoricalData.db";
     status = sqlite3_open(sql.c_str(), &db);
     if (status != SQLITE_OK)
@@ -94,19 +94,41 @@ bool CSV::update_db()
     std::vector<Stock *>::iterator st_iter;
     for (st_iter = stocks_.begin(); st_iter != stocks_.end(); st_iter++)
     {
-        // Create table
-        sql = "CREATE TABLE IF NOT EXISTS testTicker(ticker TEXT, date TEXT, volume INTEGER, "
-        "open REAL, adj_close REAL, low REAL, high REAL, UNIQUE(date))";
+        std::string ticker = (*st_iter)->get_ticker();
+//         Create table
+        sql = "CREATE TABLE IF NOT EXISTS ";
+        sql.append(ticker);
+        sql.append("(ticker TEXT, date TEXT, volume INTEGER, open REAL, adj_close REAL, low REAL, high REAL, UNIQUE(date))");
+        
         _execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg);
-//        std::cout << (*st_iter)->get_ticker() << std::endl;
+        std::cout << (*st_iter)->get_ticker() << std::endl;
         
         sum += (*st_iter)->get_data().size();
         for (int i = 0; i < (*st_iter)->get_data().size(); i++)
         {
-            // std::cout << (*st_iter)->get_data().at(i)->get_date() << std::endl;
-            // // Insert data into database
-            // sql = "INSERT INTO testTicker VALUES ('AAPL', '10', NULL, NULL, NULL, NULL, NULL)";
-            // _execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg);
+            DataPoint *curr_dp = (*st_iter)->get_data().at(i);
+             // Insert data into database
+            sql = "INSERT INTO " + ticker + " VALUES ('" + ticker + "', '";
+            sql.append(curr_dp->get_date());
+            sql.append("', ");
+            sql.append(std::to_string(curr_dp->get_volume()));
+            sql.append(", ");
+            sql.append(std::to_string(curr_dp->get_open()));
+            sql.append(", ");
+            sql.append(std::to_string(curr_dp->get_adj_close()));
+            sql.append(", ");
+            sql.append(std::to_string(curr_dp->get_low()));
+            sql.append(", ");
+            sql.append(std::to_string(curr_dp->get_high()));
+            sql.append(")");
+            
+//            Increases efficieny by not entering duplicate data
+             if (!_execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg))
+             {
+                 std::cout << "Nope" << std::endl;
+                 break;
+             }
+//            _execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg);
         }
     }
     
@@ -123,15 +145,16 @@ bool CSV::_execute_sql(sqlite3 *db, const char *sql,
                        int (*callback)(void *, int, char **, char **),
                        void *cb_arg, char **db_error_msg)
 {
-    // Create table
+//     Create table
     int status = sqlite3_exec(db, sql, _callback, cb_arg, db_error_msg);
     
     if (status != SQLITE_OK)
     {
         if (std::string(*db_error_msg).find("UNIQUE") == 0)
         {
-            std::cerr << "Attempted to enter duplicate data, continuing anyway"
-            << std::endl;
+//            std::cerr << "Attempted to enter duplicate data, continuing anyway"
+//            << std::endl;
+            return false;
         }
         else
         {
