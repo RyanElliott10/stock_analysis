@@ -1,0 +1,26 @@
+#ifndef _STOCK_H
+#define _STOCK_H
+
+#include <string>
+#include <vector>
+
+#include "stock.h"
+#include "data_point.h"
+
+class Stock
+{
+public:
+  Stock();
+  Stock(std::string ticker);
+  ~Stock();
+  void insert_data_point(DataPoint *data);
+  std::string get_ticker();
+  std::vector<DataPoint *> get_data();
+
+private:
+  std::string ticker_;
+  // vector of pointers to DataPoint objects
+  std::vector<DataPoint *> historical_data_;
+};
+
+#endif
