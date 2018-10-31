@@ -98,7 +98,7 @@ bool CSV::update_db()
         sql = "CREATE TABLE IF NOT EXISTS testTicker(ticker TEXT, date TEXT, volume INTEGER, "
         "open REAL, adj_close REAL, low REAL, high REAL, UNIQUE(date))";
         _execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg);
-        std::cout << (*st_iter)->get_ticker() << std::endl;
+//        std::cout << (*st_iter)->get_ticker() << std::endl;
         
         sum += (*st_iter)->get_data().size();
         for (int i = 0; i < (*st_iter)->get_data().size(); i++)
@@ -110,8 +110,7 @@ bool CSV::update_db()
         }
     }
     
-    std::cout << sum << std::endl;
-    
+    std::cout << "Total data points: " << sum << std::endl;
     sqlite3_close(db);
     
     return true;

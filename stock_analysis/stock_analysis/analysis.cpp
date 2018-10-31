@@ -6,13 +6,13 @@
 //  Copyright © 2018 Ryan Elliott. All rights reserved.
 //
 
-#include <stdio.h>
 #include <string>
+#include <stdio.h>
 #include <iostream>
 
-#include "csv.h"
-#include "stock.h"
-#include "data_point.h"
+#include "csv.hpp"
+#include "stock.hpp"
+#include "data_point.hpp"
 
 /**
  * Please note: if you run this on the full_history dataset, it will parse 21.8
@@ -21,11 +21,10 @@
 int main(int argc, char *argv[])
 {
     std::string input;
-    CSV *csv;
     
     if (argc != 2)
     {
-        std::cout << "usage: ./analysis [ data dir ]" << std::endl;
+        std::cout << "usage: ./analysis [ path to data dir ]" << std::endl;
         return 0;
     }
     
@@ -34,7 +33,7 @@ int main(int argc, char *argv[])
     std::cin >> input;
     if (input.find('y') == 0)
     {
-        csv = new CSV(std::string(argv[1]));
+        CSV *csv = new CSV(std::string(argv[1]));
         csv->update_db();
     }
     

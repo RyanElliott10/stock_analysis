@@ -1,0 +1,7 @@
+.DS_Store
+.gitignore
+.gitignore.swp
+.vscode/
+stock_analysis/.DS_Store
+stock_analysis/data/
+../stock_analysis.xcodeproj/*

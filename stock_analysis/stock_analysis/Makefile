@@ -7,14 +7,14 @@ MAIN = analysis
 analysis : $(OBJS)
 	$(CC) $(OBJS) $(BFLAGS) -o analysis
 
-stock : stock.cc stock.h data_point.h
-	$(CC) $(CFLAGS) -c stock.cc
+stock : stock.cpp stock.hpp data_point.hpp
+	$(CC) $(CFLAGS) -c stock.cpp
 
-DataPoint : data_point.cc data_point.h
-	$(CC) $(CFLAGS) -c data_point.cc
+DataPoint : data_point.cpp data_point.hpp
+	$(CC) $(CFLAGS) -c data_point.cpp
 
-CSV : csv.cc csv.h
-	$(CC) $(CFLAGS) -c csv.cc
+CSV : csv.cpp csv.hpp
+	$(CC) $(CFLAGS) -c csv.cpp
 	
 clean :
 	rm *.o $(MAIN)
