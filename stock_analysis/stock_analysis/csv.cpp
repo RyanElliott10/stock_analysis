@@ -90,8 +90,13 @@ bool CSV::update_db()
     }
     
     int sum = 0;
+    int i = 0;
     
     std::vector<Stock *>::iterator st_iter;
+    std::cout << "Entering historical data into db" << std::endl;
+    
+//    Wrap the SQL in a transaction to increase performance by ~200x
+    sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &db_error_msg);
     for (st_iter = stocks_.begin(); st_iter != stocks_.end(); st_iter++)
     {
         std::string ticker = (*st_iter)->get_ticker();
@@ -101,7 +106,6 @@ bool CSV::update_db()
         sql.append("(ticker TEXT, date TEXT, volume INTEGER, open REAL, adj_close REAL, low REAL, high REAL, UNIQUE(date))");
         
         _execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg);
-        std::cout << (*st_iter)->get_ticker() << std::endl;
         
         sum += (*st_iter)->get_data().size();
         for (int i = 0; i < (*st_iter)->get_data().size(); i++)
@@ -125,17 +129,43 @@ bool CSV::update_db()
 //            Increases efficieny by not entering duplicate data
              if (!_execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg))
              {
-                 std::cout << "Nope" << std::endl;
+                 std::cout << "\rData Insertion Progress: " << ++i << " / " << stocks_.size() << " stocks";
+                 std::cout.flush();
                  break;
              }
-//            _execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg);
         }
+        
+        _show_progress(stocks_.size(), ++i, std::string("Data Insertion Progress: "));
+        std::cout.flush();
     }
     
-    std::cout << "Total data points: " << sum << std::endl;
+    sqlite3_exec(db, "END TRANSACTION", NULL, NULL, &db_error_msg);
+    std::cout << std::endl << "Total data points: " << sum << std::endl;
     sqlite3_close(db);
     
     return true;
+}
+
+void CSV::_show_progress(unsigned long size, int curr, std::string label)
+{
+//    To correctly format the output
+    label.resize(50, ' ');
+    std::string prog_bar;
+//    Has 25 spaces to display # signs
+    for (int i = 0; i < 25; i++)
+    {
+        if (i < ((float(curr)/size)*25))
+        {
+            prog_bar.append("#");
+        }
+        else
+        {
+            prog_bar.append(" ");
+        }
+    }
+    
+    std::cout << "\r" << label << "[" << prog_bar << "] " << (float(curr)/size*100) << "%" << " (" << curr << " / " << size << ")";
+    std::cout.flush();
 }
 
 /**
@@ -146,14 +176,14 @@ bool CSV::_execute_sql(sqlite3 *db, const char *sql,
                        void *cb_arg, char **db_error_msg)
 {
 //     Create table
+    sqlite3_exec(db, "PRAGMA synchronous = OFF", NULL, NULL, db_error_msg);
     int status = sqlite3_exec(db, sql, _callback, cb_arg, db_error_msg);
     
     if (status != SQLITE_OK)
     {
         if (std::string(*db_error_msg).find("UNIQUE") == 0)
         {
-//            std::cerr << "Attempted to enter duplicate data, continuing anyway"
-//            << std::endl;
+//            std::cerr << "Attempted to enter duplicate data, continuing anyway" << std::endl;
             return false;
         }
         else
@@ -270,8 +300,7 @@ void CSV::_parse_data()
         }
         
         // Display counter
-        std::cout << "\r" << i + 1 << " / " << csv_filenames_.size();
-        std::cout.flush();
+        _show_progress(csv_filenames_.size(), i+1, "Parsing Progress: ");
     }
     
     std::cout << std::endl;
