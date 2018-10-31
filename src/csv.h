@@ -11,6 +11,7 @@
 class CSV
 {
 public:
+  // Functions
   CSV(std::string path);
   ~CSV();
   bool enter_data(std::string dir);
@@ -18,6 +19,11 @@ public:
   std::vector<Stock *> get_stocks();
 
 private:
+  // Variables
+  std::vector<std::string> csv_filenames_;
+  std::vector<Stock *> stocks_;
+
+  // Functions
   void _get_csvs(DIR *dir);
   void _parse_data();
   std::vector<std::string> _parseline(std::string data_line);
@@ -25,9 +31,6 @@ private:
   bool _execute_sql(sqlite3 *db, const char *str,
                     int (*callback)(void *, int, char **, char **),
                     void *cb_arg, char **db_error_msg);
-
-  std::vector<std::string> csv_filenames_;
-  std::vector<Stock *> stocks_;
 };
 
 #endif

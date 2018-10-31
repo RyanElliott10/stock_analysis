@@ -81,14 +81,28 @@ bool CSV::update_db()
     return false;
   }
 
-  // Create table
-  sql = "CREATE TABLE IF NOT EXISTS testTicker(ticker TEXT, date TEXT, volume INTEGER, "
-        "open REAL, adj_close REAL, low REAL, high REAL, UNIQUE(date))";
-  _execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg);
+  int sum = 0;
 
-  // Insert data into database
-  sql = "INSERT INTO testTicker VALUES ('AAPL', '10', NULL, NULL, NULL, NULL, NULL)";
-  _execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg);
+  std::vector<Stock *>::iterator st_iter;
+  for (st_iter = stocks_.begin(); st_iter != stocks_.end(); st_iter++)
+  {
+    // Create table
+    sql = "CREATE TABLE IF NOT EXISTS testTicker(ticker TEXT, date TEXT, volume INTEGER, "
+          "open REAL, adj_close REAL, low REAL, high REAL, UNIQUE(date))";
+    _execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg);
+    std::cout << (*st_iter)->get_ticker() << std::endl;
+
+    sum += (*st_iter)->get_data().size();
+    for (int i = 0; i < (*st_iter)->get_data().size(); i++)
+    {
+      // std::cout << (*st_iter)->get_data().at(i)->get_date() << std::endl;
+      // // Insert data into database
+      // sql = "INSERT INTO testTicker VALUES ('AAPL', '10', NULL, NULL, NULL, NULL, NULL)";
+      // _execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg);
+    }
+  }
+
+  std::cout << sum << std::endl;
 
   sqlite3_close(db);
 
@@ -107,8 +121,6 @@ bool CSV::_execute_sql(sqlite3 *db, const char *sql,
 
   if (status != SQLITE_OK)
   {
-    // TODO: Catch unique error. Should continue on with data insertion,
-    // I think. You need to workout the logistics here
     if (std::string(*db_error_msg).find("UNIQUE") == 0)
     {
       std::cerr << "Attempted to enter duplicate data, continuing anyway"
@@ -132,9 +144,9 @@ int CSV::_callback(void *NotUsed, int argc, char **argv, char **azColName)
 {
   for (int i = 0; i < argc; i++)
   {
-    printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+    std::cout << azColName[i] << " = " << (argv[i] ? argv[i] : "NULL") << std::endl;
   }
-  printf("\n");
+  std::cout << std::endl;
   return 0;
 }
 
@@ -170,9 +182,6 @@ void CSV::_parse_data()
     const std::string input_file(csv_filenames_.at(i));
     std::ifstream input_stream(input_file);
     std::string data_line;
-
-    // Creates Stock object to do operations on. The if is just for testing
-    // purposes, remove once fully implemented
     std::string ticker(input_file);
     std::string prev_ticker = "";
     ticker = ticker.substr(0, ticker.find(".csv"));
