@@ -113,7 +113,7 @@ bool CSV::update_db()
         {
             DataPoint *curr_dp = (*st_iter)->get_data().at(i);
              // Insert data into database
-            sql = "INSERT INTO " + ticker + " VALUES ('" + ticker + "', '";
+            sql = "INSERT INTO \"" + ticker + "\" VALUES ('" + ticker + "', '";
             sql.append(curr_dp->get_date());
             sql.append("', ");
             sql.append(std::to_string(curr_dp->get_volume()));
@@ -128,10 +128,11 @@ bool CSV::update_db()
             sql.append(")");
             
 //            Increases efficieny by not entering duplicate data
-             if (!_execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg))
-             {
-                 break;
-             }
+//            std::cout << " " << sql << std::endl;
+            if (!_execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg))
+            {
+                break;
+            }
         }
         
         _show_progress(stocks_.size(), ++i, std::string("Data Insertion Progress: "));
