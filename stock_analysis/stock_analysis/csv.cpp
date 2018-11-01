@@ -20,7 +20,7 @@
 #include "stock.hpp"
 #include "data_point.hpp"
 
-CSV::CSV(std::string path)
+CSV::CSV(const std::string path)
 {
     enter_data(path);
 }
@@ -45,7 +45,7 @@ std::vector<Stock *> CSV::get_stocks()
  *
  * Returns boolean of success
  */
-bool CSV::enter_data(std::string target_dir)
+bool CSV::enter_data(const std::string target_dir)
 {
 //    Change cwd to dir with all the .csv files
     char path[FILENAME_MAX];
@@ -101,10 +101,11 @@ bool CSV::update_db()
     {
         std::string ticker = (*st_iter)->get_ticker();
 //         Create table
-        sql = "CREATE TABLE IF NOT EXISTS ";
+        sql = "CREATE TABLE IF NOT EXISTS \"";
         sql.append(ticker);
-        sql.append("(ticker TEXT, date TEXT, volume INTEGER, open REAL, adj_close REAL, low REAL, high REAL, UNIQUE(date))");
+        sql.append("\"(ticker TEXT, date TEXT, volume INTEGER, open REAL, adj_close REAL, low REAL, high REAL, UNIQUE(date))");
         
+//        std::cout << (*st_iter)->get_ticker() << std::endl;
         _execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg);
         
         sum += (*st_iter)->get_data().size();
@@ -129,14 +130,11 @@ bool CSV::update_db()
 //            Increases efficieny by not entering duplicate data
              if (!_execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg))
              {
-                 std::cout << "\rData Insertion Progress: " << ++i << " / " << stocks_.size() << " stocks";
-                 std::cout.flush();
                  break;
              }
         }
         
         _show_progress(stocks_.size(), ++i, std::string("Data Insertion Progress: "));
-        std::cout.flush();
     }
     
     sqlite3_exec(db, "END TRANSACTION", NULL, NULL, &db_error_msg);
@@ -146,7 +144,7 @@ bool CSV::update_db()
     return true;
 }
 
-void CSV::_show_progress(unsigned long size, int curr, std::string label)
+void CSV::_show_progress(const unsigned long size, const int curr, std::string label)
 {
 //    To correctly format the output
     label.resize(50, ' ');
@@ -188,7 +186,7 @@ bool CSV::_execute_sql(sqlite3 *db, const char *sql,
         }
         else
         {
-            std::cerr << "Unable to execute SQL" << std::endl;
+//            std::cerr << "Unable to execute SQL" << std::endl;
             sqlite3_close(db);
             return false;
         }

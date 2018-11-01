@@ -29,13 +29,8 @@ int main(int argc, char *argv[])
     }
     
     // Prompt user if they want to enter new data into the database
-    std::cout << "Enter new data into database? (y/n) ";
-    std::cin >> input;
-    if (input.find('y') == 0)
-    {
-        CSV *csv = new CSV(std::string(argv[1]));
-        csv->update_db();
-    }
+    CSV *csv = new CSV(std::string(argv[1]));
+    csv->update_db();
     
     return 0;
 }
