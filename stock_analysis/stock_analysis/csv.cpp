@@ -46,7 +46,7 @@ std::vector<Stock *> CSV::get_stocks()
  */
 bool CSV::enter_data(const std::string target_dir)
 {
-//    Change cwd to dir with all the .csv files
+    // Change cwd to dir with all the .csv files
     char path[FILENAME_MAX];
     DIR *dir;
     char init_dir[1024];
@@ -89,7 +89,7 @@ bool CSV::update_db()
     sql = db_path_;
     status = sqlite3_open(sql.c_str(), &db);
     if (status != SQLITE_OK) {
-        std::cerr << "Unable to open HistoricalData.db" << std::endl;
+        std::cerr << "Unable to open database" << std::endl;
         return false;
     }
     
@@ -103,6 +103,7 @@ bool CSV::update_db()
     sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &db_error_msg);
     for (st_iter = stocks_.begin(); st_iter != stocks_.end(); st_iter++) {
         std::string ticker = (*st_iter)->get_ticker();
+        
         // Create table
         sql = "CREATE TABLE IF NOT EXISTS \"";
         sql.append(ticker);
@@ -191,8 +192,8 @@ void CSV::_show_progress(const unsigned long size, const int curr, std::string l
  @return int containing the success value of the function (0 is successful, 1 is duplicate data, 2 is catastrophic failure
  */
 int CSV::_execute_sql(sqlite3 *db, const char *sql,
-                       int (*callback)(void *, int, char **, char **),
-                       void *cb_arg, char **db_error_msg)
+                      int (*callback)(void *, int, char **, char **),
+                      void *cb_arg, char **db_error_msg)
 {
     sqlite3_exec(db, "PRAGMA synchronous = OFF", NULL, NULL, db_error_msg);
     int status = sqlite3_exec(db, sql, _callback, cb_arg, db_error_msg);
@@ -307,8 +308,7 @@ void CSV::_parse_data()
         // if the Stock has DataPoints associated with it
         if (stock->get_data().size() > 0) {
             stocks_.push_back(stock);
-        }
-        else {
+        } else {
             free(stock);
         }
         

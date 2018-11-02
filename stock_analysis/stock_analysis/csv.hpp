@@ -40,8 +40,8 @@ private:
     std::vector<std::string> _parseline(std::string data_line);
     static int _callback(void *NotUsed, int argc, char **argv, char **azColName);
     int _execute_sql(sqlite3 *db, const char *str,
-                      int (*callback)(void *, int, char **, char **),
-                      void *cb_arg, char **db_error_msg);
+                     int (*callback)(void *, int, char **, char **),
+                     void *cb_arg, char **db_error_msg);
 };
 
 #endif /* csv_hpp */
