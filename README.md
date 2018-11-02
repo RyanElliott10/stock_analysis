@@ -2,8 +2,9 @@
 General purpose stock analysis project.
 
 ## Coding Standard
-- 2 spaces
-- files are to be named_like_this.cc (NOT .cpp)
+- Braces are K&R style
+   - Functions have braces on new line
+   - Non-functions have braces on same line
 - StrongCamelCase for classes, structs, enums, etc. (all types)
 - underscore_vars for vars and public functions
 - _underscore_funcs for private functions

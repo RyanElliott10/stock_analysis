@@ -22,8 +22,7 @@ int main(int argc, char *argv[])
 {
     std::string input;
     
-    if (argc != 3)
-    {
+    if (argc != 3) {
         std::cout << "Usage: ./analysis [ path to data dir ] [ path to database ] " << std::endl;
         return 0;
     }
