@@ -20,9 +20,10 @@
 #include "stock.hpp"
 #include "data_point.hpp"
 
-CSV::CSV(const std::string path)
+CSV::CSV(const std::string data_path, const std::string db_path)
 {
-    enter_data(path);
+    enter_data(data_path);
+    db_path_ = db_path;
 }
 
 CSV::~CSV()
@@ -39,17 +40,23 @@ std::vector<Stock *> CSV::get_stocks()
 }
 
 /**
- * Accepts a string containing the target directory, changes the cwd to the
- * correct directory, dumps all CSV files into the csv_filenames_ member, and
- * enters the data into a SQLite3 database.
  *
  * Returns boolean of success
+ */
+
+/**
+ Accepts a string containing the target directory, changes the cwd to the correct directory, dumps all CSV files into the csv_filenames_ member, and enters the data into a SQLite3 database.
+
+ @param target_dir Directory containg all CSV files with data
+ @return Boolean containing success value
  */
 bool CSV::enter_data(const std::string target_dir)
 {
 //    Change cwd to dir with all the .csv files
     char path[FILENAME_MAX];
     DIR *dir;
+    char init_dir[1024];
+    getcwd(init_dir, sizeof(init_dir));
     
     memset(path, FILENAME_MAX, 0);
     chdir(target_dir.c_str());
@@ -65,10 +72,16 @@ bool CSV::enter_data(const std::string target_dir)
     }
     
     _parse_data();
-    chdir("../");
+    chdir(init_dir);
+    
     return true;
 }
 
+/**
+ Iterates through all Stocks, and their subsequent DataPoint objects, and checks if they should be added to the database.
+
+ @return Boolean containing success value
+ */
 bool CSV::update_db()
 {
     sqlite3 *db;
@@ -76,12 +89,13 @@ bool CSV::update_db()
     int status;
     std::string sql;
     
-//     This DB will have n tables, where n is equal to the amount of tickers.
-//     Essentially, each ticker has its own database with all of its historical
-//     data.
-//
-//     Open database
-    sql = "HistoricalData.db";
+    // This DB will have n tables, where n is equal to the amount of tickers.
+    // Essentially, each ticker has its own database with all of its historical
+    // data.
+
+    // Open database
+    
+    sql = db_path_;
     status = sqlite3_open(sql.c_str(), &db);
     if (status != SQLITE_OK)
     {
@@ -95,17 +109,16 @@ bool CSV::update_db()
     std::vector<Stock *>::iterator st_iter;
     std::cout << "Entering historical data into db" << std::endl;
     
-//    Wrap the SQL in a transaction to increase performance by ~200x
+    // Wrap the SQL in a transaction to increase performance by ~200x
     sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &db_error_msg);
     for (st_iter = stocks_.begin(); st_iter != stocks_.end(); st_iter++)
     {
         std::string ticker = (*st_iter)->get_ticker();
-//         Create table
+        // Create table
         sql = "CREATE TABLE IF NOT EXISTS \"";
         sql.append(ticker);
         sql.append("\"(ticker TEXT, date TEXT, volume INTEGER, open REAL, adj_close REAL, low REAL, high REAL, UNIQUE(date))");
         
-//        std::cout << (*st_iter)->get_ticker() << std::endl;
         _execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg);
         
         sum += (*st_iter)->get_data().size();
@@ -127,30 +140,45 @@ bool CSV::update_db()
             sql.append(std::to_string(curr_dp->get_high()));
             sql.append(")");
             
-//            Increases efficieny by not entering duplicate data
-//            std::cout << " " << sql << std::endl;
-            if (!_execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg))
+            int status = _execute_sql(db, sql.c_str(), _callback, 0, &db_error_msg);
+            if (status == 1)
             {
+                // If it tried to enter duplicate data
                 break;
+            }
+            if (status == 2)
+            {
+                // Catastrophic SQL insertion error
+                std::cout << "Catastrophic SQL insertion error, exiting and closing db" << std::endl;
+                return false;
             }
         }
         
         _show_progress(stocks_.size(), ++i, std::string("Data Insertion Progress: "));
     }
     
+    std::cout << std::endl;
     sqlite3_exec(db, "END TRANSACTION", NULL, NULL, &db_error_msg);
-    std::cout << std::endl << "Total data points: " << sum << std::endl;
+    std::cout << "Total data points: " << sum << std::endl;
     sqlite3_close(db);
     
     return true;
 }
 
+
+/**
+ Updates the progress bar for iterating through large datasets that might appeas as being hung in the program, when in actuality, they simply contain a few million datapoints and take a while to be iterated through
+
+ @param size The size of the entire vector
+ @param curr The current index
+ @param label Description of the type of thing being iterated through
+ */
 void CSV::_show_progress(const unsigned long size, const int curr, std::string label)
 {
-//    To correctly format the output
+    // To correctly format the output
     label.resize(50, ' ');
     std::string prog_bar;
-//    Has 25 spaces to display # signs
+    // Has 25 spaces to display # signs
     for (int i = 0; i < 25; i++)
     {
         if (i < ((float(curr)/size)*25))
@@ -163,18 +191,26 @@ void CSV::_show_progress(const unsigned long size, const int curr, std::string l
         }
     }
     
+    // To fully clear the console
+    std::cout << "\r";
+    for (int i = 0; i < 100; ++i)
+        std::cout << " ";
     std::cout << "\r" << label << "[" << prog_bar << "] " << (float(curr)/size*100) << "%" << " (" << curr << " / " << size << ")";
     std::cout.flush();
 }
 
 /**
- * My own wrapper to execute SQL and do all appropriate error checking
+ My own wrapper to execute SQL and do all appropriate error checking
+
+ @param db Pointer to already opened database
+ @param sql String containing SQL query to be executed
+ @param callback Function used for the callback function
+ @return int containing the success value of the function (0 is successful, 1 is duplicate data, 2 is catastrophic failure
  */
-bool CSV::_execute_sql(sqlite3 *db, const char *sql,
+int CSV::_execute_sql(sqlite3 *db, const char *sql,
                        int (*callback)(void *, int, char **, char **),
                        void *cb_arg, char **db_error_msg)
 {
-//     Create table
     sqlite3_exec(db, "PRAGMA synchronous = OFF", NULL, NULL, db_error_msg);
     int status = sqlite3_exec(db, sql, _callback, cb_arg, db_error_msg);
     
@@ -182,22 +218,29 @@ bool CSV::_execute_sql(sqlite3 *db, const char *sql,
     {
         if (std::string(*db_error_msg).find("UNIQUE") == 0)
         {
-//            std::cerr << "Attempted to enter duplicate data, continuing anyway" << std::endl;
-            return false;
+            return 1;
         }
         else
         {
-//            std::cerr << "Unable to execute SQL" << std::endl;
+            /**
+             * Really should figure out how to handle this catastrophic error
+             */
             sqlite3_close(db);
-            return false;
+            return 2;
         }
     }
     
-    return true;
+    return 0;
 }
 
 /**
- * Callback function for sqlite_exec
+ Callback function for sqlite_exec
+
+ @param NotUsed N/A
+ @param argc N/A
+ @param argv N/A
+ @param azColName N/A
+ @return N/A
  */
 int CSV::_callback(void *NotUsed, int argc, char **argv, char **azColName)
 {
@@ -210,8 +253,9 @@ int CSV::_callback(void *NotUsed, int argc, char **argv, char **azColName)
 }
 
 /**
- * Accepts a directory, iterates through it, and assigns all CSV files to
- * the csv_filenames_ vector to be used later.
+ Accepts a directory, iterates through it, and assigns all CSV files to the csv_filenames_ vector to be used later.
+
+ @param dir Directory containing all CSV files
  */
 void CSV::_get_csvs(DIR *dir)
 {
@@ -228,8 +272,11 @@ void CSV::_get_csvs(DIR *dir)
 }
 
 /**
- * Iterates through the csv_filenames_ data, opens each file and creates
- * DataPoint objects for each line.
+ * I
+ */
+
+/**
+ Iterates through the csv_filenames_ data, opens each file and pushes the new DataPoint and Stock objects to the appropriate vectors
  */
 void CSV::_parse_data()
 {
@@ -301,10 +348,15 @@ void CSV::_parse_data()
         // Display counter
         _show_progress(csv_filenames_.size(), i+1, "Parsing Progress: ");
     }
-    
     std::cout << std::endl;
 }
 
+/**
+ Parses a single line from a CSV file
+
+ @param data_line Line from the CSV file containing all the data
+ @return vector containing all the data from the line in string format
+ */
 std::vector<std::string> CSV::_parseline(std::string data_line)
 {
     std::string token;

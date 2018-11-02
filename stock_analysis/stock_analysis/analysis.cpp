@@ -22,14 +22,14 @@ int main(int argc, char *argv[])
 {
     std::string input;
     
-    if (argc != 2)
+    if (argc != 3)
     {
-        std::cout << "usage: ./analysis [ path to data dir ]" << std::endl;
+        std::cout << "Usage: ./analysis [ path to data dir ] [ path to database ] " << std::endl;
         return 0;
     }
     
     // Prompt user if they want to enter new data into the database
-    CSV *csv = new CSV(std::string(argv[1]));
+    CSV *csv = new CSV(std::string(argv[1]), std::string(argv[2]));
     csv->update_db();
     
     return 0;
