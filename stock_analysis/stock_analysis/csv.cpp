@@ -33,6 +33,11 @@ CSV::~CSV()
     }
 }
 
+/**
+ Getter for stocks_ vector
+
+ @return stocks_ vector
+ */
 std::vector<Stock *> CSV::get_stocks()
 {
     return stocks_;

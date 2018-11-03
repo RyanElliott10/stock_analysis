@@ -27,7 +27,6 @@ public:
     
 private:
     std::string ticker_;
-    // vector of pointers to DataPoint objects
     std::vector<DataPoint *> historical_data_;
 };
 
