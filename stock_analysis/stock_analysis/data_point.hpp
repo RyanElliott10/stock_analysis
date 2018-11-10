@@ -26,6 +26,9 @@ public:
     float get_high();
     
 private:
+    // Functions
+    
+    // Variables
     std::string date_;
     long volume_;
     float open_, adj_close_, low_, high_;

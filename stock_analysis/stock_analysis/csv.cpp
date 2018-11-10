@@ -106,6 +106,7 @@ bool CSV::update_db()
     
     // Wrap the SQL in a transaction to increase performance by ~200x
     sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &db_error_msg);
+    
     for (st_iter = stocks_.begin(); st_iter != stocks_.end(); st_iter++) {
         std::string ticker = (*st_iter)->get_ticker();
         

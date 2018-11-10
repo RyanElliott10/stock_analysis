@@ -28,11 +28,6 @@ public:
     std::vector<Stock *> get_stocks();
     
 private:
-    // Variables
-    std::vector<std::string> csv_filenames_;
-    std::vector<Stock *> stocks_;
-    std::string db_path_;
-    
     // Functions
     void _show_progress(const unsigned long size, const int curr, std::string label);
     void _get_csvs(DIR *dir);
@@ -42,6 +37,11 @@ private:
     int _execute_sql(sqlite3 *db, const char *str,
                      int (*callback)(void *, int, char **, char **),
                      void *cb_arg, char **db_error_msg);
+    
+    // Variables
+    std::vector<std::string> csv_filenames_;
+    std::vector<Stock *> stocks_;
+    std::string db_path_;
 };
 
 #endif /* csv_hpp */

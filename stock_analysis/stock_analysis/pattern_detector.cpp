@@ -34,14 +34,16 @@ PatternDetector::~PatternDetector()
 
  @param stock Stock object
  */
-void PatternDetector::detect_pattern(Stock *stock)
+std::vector<bool> PatternDetector::detect_pattern(Stock *stock)
 {
     std::vector<DataPoint *> data = stock->get_data();
-    bool pattern;
+    std::vector<bool> pattern;
     
     for (long j = data.size()-1; j >= 0; j--) {
-        pattern = _find_pattern(data.at(j)->get_adj_close());
+        pattern.push_back(_find_pattern(data.at(j)->get_adj_close()));
     }
+    
+    return pattern;
 }
 
 /**

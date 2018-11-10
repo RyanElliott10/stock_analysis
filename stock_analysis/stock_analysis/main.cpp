@@ -23,7 +23,6 @@ int main(int argc, char *argv[])
 {
     std::string input;
     CSV *csv;
-    PatternDetector detector(2, 2);
     
     switch(argc) {
         case 2:
@@ -40,9 +39,29 @@ int main(int argc, char *argv[])
     csv->update_db();
     std::vector<Stock *> stocks = csv->get_stocks();
     
+    // Iterate through all stocks and find any 2,2 patterns
+    // Assign the patterns vector to each stock's patterns member
     for (std::vector<Stock *>::iterator iter = stocks.begin(); iter != stocks.end(); ++iter) {
-        detector.detect_pattern(*iter);
+        PatternDetector detector(2, 2);
+        struct Pattern pattern(2, 2, detector.detect_pattern(*iter));
+        (*iter)->add_pattern(pattern);
     }
     
     return 0;
 }
+
+/*
+ Plans for the pattern detector implementation:
+ 
+ Current Issues:
+    - Since it's an object and I only made one instance, everything shares it
+    - The object is setup such that whenever it is called, it adds data from all the previous tickers and compares that
+ 
+ Plans to Fix the Issues:
+    - Change the stock class such that each stock has a PatternDetector member
+    - Change the PatternDetector class such that it simply creates temp vars whenever the detect_pattern function is called
+    - As of right now, I'm leaning towards the latter
+    - In addition, it should be changed such that you can call the pattern_detector function accepts different pattern lengths and repetitions, rather than initalizing the object with a set pattern.
+        - However, in the future, this can cause design issues because you'll likely end up with a set of patterns that I would always go to
+        - Change it so that it returns an array of the pattern_detected booleans
+ */

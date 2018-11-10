@@ -16,11 +16,13 @@ class PatternDetector
 public:
     PatternDetector(const int pattern_length, const int number_of_repetitions);
     ~PatternDetector();
-    void detect_pattern(Stock *stock);
+    std::vector<bool> detect_pattern(Stock *stock);
     
 private:
+    // Functions
     bool _find_pattern(double price);
     
+    // Variables
     int pattern_length_;
     int num_repetitions_;
     int length_;

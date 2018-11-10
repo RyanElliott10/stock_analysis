@@ -30,6 +30,11 @@ void Stock::insert_data_point(DataPoint *data)
     historical_data_.push_back(data);
 }
 
+void Stock::add_pattern(struct Pattern p)
+{
+    patterns.push_back(p);
+}
+
 // Getters
 std::string Stock::get_ticker()
 {
@@ -39,4 +44,9 @@ std::string Stock::get_ticker()
 std::vector<DataPoint *> Stock::get_data()
 {
     return historical_data_;
+}
+
+std::vector<struct Pattern> Stock::get_patterns()
+{
+    return patterns;
 }
